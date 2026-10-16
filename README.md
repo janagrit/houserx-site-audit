@@ -1,5 +1,8 @@
 # houserx-site-audit
 
+[![Site audit](https://github.com/janagrit/houserx-site-audit/actions/workflows/site-audit.yml/badge.svg)](https://github.com/janagrit/houserx-site-audit/actions/workflows/site-audit.yml)
+[![Latest report](https://img.shields.io/badge/report-latest-blue)](https://janagrit.github.io/houserx-site-audit/)
+
 Automated checks and a running list of recommendations for <https://www.houserx.com> (Webflow).
 
 ## Setup
