@@ -1,8 +1,8 @@
-import { test, expect } from '../../fixtures';
+import { test, expect, expectKnownIssue } from '../../fixtures';
 import type { Inquiry } from '../../page-objects/ContactPage';
 
-// Both forms post to Webflow's form API, which the write guard aborts. Submit also stays disabled until
-// a human solves reCAPTCHA, so these tests cover the form's structure and validation, never a real send.
+// Both forms post to Webflow's form API, which the write guard aborts, and Submit stays disabled behind
+// reCAPTCHA. These tests cover the form's structure and validation only; a submission is never attempted.
 const INQUIRY: Inquiry = {
   firstName: 'Playwright',
   lastName: 'Test',
@@ -30,7 +30,7 @@ test.describe('E2E — Contact form', () => {
   });
 
   test('required fields are marked with * in their label', async ({ contactPage }) => {
-    test.fail(true, 'Known site defect — FINDINGS #8');
+    expectKnownIssue({ path: '/contact' }, 'contact-required-marker');
     const unmarked = await contactPage.form.locator('[required]').evaluateAll((fields) =>
       fields
         .filter((field) => !(field as HTMLInputElement).labels?.[0]?.textContent?.includes('*'))
@@ -49,17 +49,14 @@ test.describe('E2E — Contact form', () => {
     await expect(contactPage.emailInput).toHaveJSProperty('validity.typeMismatch', true);
   });
 
-  test('keeps Submit disabled until reCAPTCHA is solved, and sends nothing', async ({ contactPage, blockedWrites }) => {
+  // Only checks that the CAPTCHA is in place. The suite never interacts with, solves or works around it.
+  test('is protected by reCAPTCHA: Submit stays disabled and nothing is sent', async ({ contactPage, blockedWrites }) => {
     await expect(contactPage.recaptcha).toBeAttached();
 
     await contactPage.fill(INQUIRY);
 
     await expect(contactPage.submitButton).toBeDisabled();
     expect(blockedWrites).toEqual([]);
-  });
-
-  test('shows the confirmation after a successful submit', async () => {
-    test.fixme(true, 'Needs a staging copy without reCAPTCHA (or a Webflow test key) to submit and assert .w-form-done.');
   });
 });
 
