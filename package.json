@@ -1,0 +1,30 @@
+{
+  "name": "houserx-site-audit",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Automated audit of houserx.com: SEO, accessibility, links, content hygiene, mobile layout, lead form",
+  "scripts": {
+    "test": "playwright test",
+    "test:seo": "playwright test tests/seo.spec.ts",
+    "test:a11y": "playwright test tests/accessibility.spec.ts",
+    "test:links": "playwright test tests/links.spec.ts",
+    "test:content": "playwright test tests/content.spec.ts",
+    "test:mobile": "playwright test tests/mobile.spec.ts",
+    "test:visual": "playwright test tests/visual.spec.ts",
+    "test:visual:update": "playwright test tests/visual.spec.ts --update-snapshots",
+    "test:visual:update:linux": "docker run --rm --ipc=host -v \"$PWD\":/work -v /work/node_modules -w /work mcr.microsoft.com/playwright:v1.64.0-noble bash -c 'npm ci --silent && npx playwright test tests/visual.spec.ts --update-snapshots'",
+    "test:e2e": "playwright test tests/e2e",
+    "test:ui": "playwright test --ui",
+    "typecheck": "tsc -p .",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@playwright/test": "1.64.0",
+    "@types/node": "^26.6.5",
+    "typescript": "^7.0.2"
+  },
+  "overrides": {
+    "playwright-core": "$@playwright/test"
+  }
+}
