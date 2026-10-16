@@ -1,7 +1,8 @@
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
+import type { NavItem } from '../page-objects/SiteHeader';
 
-const ENV_FILE = resolve(__dirname, '.env');
+const ENV_FILE = resolve(__dirname, '..', '.env');
 const PRODUCTION_URL = 'https://www.houserx.com';
 
 if (existsSync(ENV_FILE)) {
@@ -25,26 +26,12 @@ function readBaseUrl(): string {
 
 export const BASE_URL = readBaseUrl();
 
-export type AuditCheck =
-  | 'single-h1'
-  | 'title-length'
-  | 'meta-description'
-  | 'canonical'
-  | 'json-ld'
-  | 'html-lang'
-  | 'axe'
-  | 'broken-links'
-  | 'placeholder-links'
-  | 'placeholder-text';
-
 export interface AuditPage {
   readonly name: string;
   readonly path: string;
-  /** Checks known to fail on the live site, mapped to their FINDINGS.md entry. */
-  readonly knownIssues?: Readonly<Partial<Record<AuditCheck, string>>>;
 }
 
-// Pages under audit. Add URLs here as you expand coverage.
+// Pages under audit. Every per-page check runs against each one. Known defects live in known-issues.ts.
 export const PAGES: readonly AuditPage[] = [
   { name: 'Home', path: '/' },
   { name: 'About', path: '/about' },
@@ -55,4 +42,13 @@ export const PAGES: readonly AuditPage[] = [
   { name: 'Patient Stories', path: '/patient-stories' },
   { name: 'Testimonials', path: '/testimonials' },
   { name: 'Case Study: Marin Cancer Care', path: '/marin-cancer-care' },
+];
+
+/** Header menu, in on-screen order, with the page each item must open. */
+export const NAV_DESTINATIONS: ReadonlyArray<{ item: NavItem; path: RegExp }> = [
+  { item: 'About Us', path: /\/about$/ },
+  { item: 'Technology', path: /\/technology$/ },
+  { item: 'Careers', path: /\/careers$/ },
+  { item: 'News & Blog', path: /\/blog$/ },
+  { item: 'Contact', path: /\/contact$/ },
 ];

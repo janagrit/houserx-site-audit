@@ -1,21 +1,14 @@
 import type { Response } from '@playwright/test';
 import { test, expect } from '../../fixtures';
-import type { NavItem } from '../../page-objects/SiteHeader';
+import { NAV_DESTINATIONS } from '../../data/pages';
 
 // One visitor clicking through the site in a single session, the way a real user would:
 // Home → every header menu item in turn → logo back to Home → the hero CTAs.
-const MENU_JOURNEY: ReadonlyArray<{ item: NavItem; path: RegExp }> = [
-  { item: 'About Us', path: /\/about$/ },
-  { item: 'Technology', path: /\/technology$/ },
-  { item: 'Careers', path: /\/careers$/ },
-  { item: 'News & Blog', path: /\/blog$/ },
-  { item: 'Contact', path: /\/contact$/ },
-];
-
 test.describe('E2E — Visitor journey', () => {
-  test.use({ reducedMotion: 'reduce' });
-  // Each page is ~14 MB and this test loads nine of them in a row.
-  test.setTimeout(180_000);
+  // Opening a page is about navigation, status and content, not images: skip the ~14 MB of GIFs per page.
+  test.use({ reducedMotion: 'reduce', skipMedia: true });
+  // Nine page loads in a row.
+  test.setTimeout(120_000);
 
   test('clicks through every main page and each one opens', async ({ homePage, siteHeader, page, pageErrors }) => {
     const documentResponses: Response[] = [];
@@ -39,7 +32,7 @@ test.describe('E2E — Visitor journey', () => {
       await expect(homePage.heroHeading).toBeVisible();
     });
 
-    for (const { item, path } of MENU_JOURNEY) {
+    for (const { item, path } of NAV_DESTINATIONS) {
       await test.step(`click "${item}" in the header`, async () => {
         await siteHeader.navigateTo(item);
         await expectPageOpened(path);

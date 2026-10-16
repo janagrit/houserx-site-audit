@@ -1,5 +1,5 @@
-import { test, expect } from '../fixtures';
-import { PAGES } from '../targets';
+import { test, expect } from '../../fixtures';
+import { PAGES } from '../../data/pages';
 
 for (const { name, path } of PAGES) {
   test(`Mobile — ${name}: no horizontal scroll`, async ({ basePage, page }) => {

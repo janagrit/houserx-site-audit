@@ -1,5 +1,5 @@
-import { test, expect, expectKnownIssue } from '../fixtures';
-import { PAGES } from '../targets';
+import { test, expect, expectKnownIssue } from '../../fixtures';
+import { PAGES } from '../../data/pages';
 
 // Template and CMS leftovers that should never reach visitors.
 const PLACEHOLDER_TEXT: readonly RegExp[] = [
@@ -10,7 +10,7 @@ const PLACEHOLDER_TEXT: readonly RegExp[] = [
 
 for (const target of PAGES) {
   test.describe(`Content — ${target.name}`, () => {
-    test.use({ reducedMotion: 'reduce' });
+    test.use({ reducedMotion: 'reduce', skipMedia: true });
 
     test.beforeEach(async ({ basePage }) => {
       await basePage.open(target.path);
@@ -26,11 +26,19 @@ for (const target of PAGES) {
 
     test('has no visible links that go nowhere (href="#")', async ({ page }) => {
       expectKnownIssue(target, 'placeholder-links');
-      const deadLinks = await page.locator('a[href="#"]').evaluateAll((anchors) =>
-        anchors
-          .filter((a) => (a as HTMLElement).offsetParent !== null)
-          .map((a) => (a.textContent ?? '').trim().replace(/\s+/g, ' ') || a.getAttribute('aria-label') || a.className),
-      );
+      // Webflow lightboxes and Finsweet click mirrors are JS-driven buttons that use href="#" by design.
+      const deadLinks = await page
+        .locator('a[href="#"]:not(.w-lightbox):not([fs-mirrorclick-element])')
+        .evaluateAll((anchors) =>
+          anchors
+            .filter((a) => (a as HTMLElement).offsetParent !== null)
+            .map(
+              (a) =>
+                (a as HTMLElement).innerText.trim().replace(/\s+/g, ' ') ||
+                a.getAttribute('aria-label') ||
+                `.${a.className.split(' ')[0]}`,
+            ),
+        );
       const counts = deadLinks.reduce<Record<string, number>>(
         (acc, label) => ({ ...acc, [label]: (acc[label] ?? 0) + 1 }),
         {},

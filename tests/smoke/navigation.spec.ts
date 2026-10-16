@@ -1,15 +1,9 @@
 import { test, expect } from '../../fixtures';
-import type { NavItem } from '../../page-objects/SiteHeader';
-
-const NAV_DESTINATIONS: ReadonlyArray<{ item: NavItem; path: RegExp }> = [
-  { item: 'About Us', path: /\/about$/ },
-  { item: 'Technology', path: /\/technology$/ },
-  { item: 'Careers', path: /\/careers$/ },
-  { item: 'News & Blog', path: /\/blog$/ },
-  { item: 'Contact', path: /\/contact$/ },
-];
+import { NAV_DESTINATIONS } from '../../data/pages';
 
 test.describe('Smoke — Navigation (desktop)', () => {
+  test.use({ skipMedia: true });
+
   for (const { item, path } of NAV_DESTINATIONS) {
     test(`"${item}" opens its page`, async ({ homePage, siteHeader, page }) => {
       await homePage.open();
