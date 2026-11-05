@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { test, expect, expectCheck } from '../../fixtures';
+import { test, expect, expectCheck, knownIssueTags } from '../../fixtures';
 import { PAGES } from '../../data/pages';
 
 for (const target of PAGES) {
@@ -16,7 +16,7 @@ for (const target of PAGES) {
 
     // Known issues record how many elements fail each axe rule on each page, so a new violation fails the build
     // even when it falls under a rule that is already known on this page.
-    test('no WCAG 2.2 AA violations beyond known issues (axe)', async ({ page }) => {
+    test('no WCAG 2.2 AA violations beyond known issues (axe)', knownIssueTags(target.path, 'axe'), async ({ page }) => {
       const results = await new AxeBuilder({ page })
         .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
         // The reCAPTCHA iframe is Google's markup, not the site's.

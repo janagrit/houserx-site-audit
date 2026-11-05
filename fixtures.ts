@@ -69,6 +69,17 @@ export const test = base.extend<AuditFixtures & AuditOptions>({
 
 export { expect };
 
+/**
+ * Report tags for a check that has a known site defect on this page: `@known-issue` plus each HRX ID.
+ * The HTML report shows them as labels in the test list and filters by them on click, so the tests that
+ * show a known bug stand out without opening each one. Empty when the page should pass the check.
+ */
+export function knownIssueTags(path: string, check: AuditCheck): { tag: string[] } {
+  const known = knownDefectFor(path, check);
+  const ids = [...new Set(known?.issues.map((issue) => `@${issue.id}`) ?? [])];
+  return { tag: ids.length > 0 ? ['@known-issue', ...ids] : [] };
+}
+
 /** Annotation type that marks a test as covered by a known site defect (read by the summary reporter). */
 export const KNOWN_ISSUE_ANNOTATION = 'known issue';
 

@@ -1,4 +1,4 @@
-import { test, expect, expectCheck } from '../../fixtures';
+import { test, expect, expectCheck, knownIssueTags } from '../../fixtures';
 import type { Inquiry } from '../../page-objects/ContactPage';
 
 // Both forms post to Webflow's form API, which the write guard aborts, and Submit stays disabled behind
@@ -33,7 +33,7 @@ test.describe('E2E — Contact form', () => {
     expect(unlabelled, 'fields without a visible label').toEqual([]);
   });
 
-  test('required fields are marked with * in their label', async ({ contactPage }) => {
+  test('required fields are marked with * in their label', knownIssueTags('/contact', 'contact-required-marker'), async ({ contactPage }) => {
     const required = contactPage.form.locator('[required]');
     await expect(required, 'required fields').not.toHaveCount(0);
 

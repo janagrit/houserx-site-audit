@@ -1,4 +1,4 @@
-import { test, expect, expectCheck } from '../../fixtures';
+import { test, expect, expectCheck, knownIssueTags } from '../../fixtures';
 import { PAGES } from '../../data/pages';
 
 // Template and CMS leftovers that should never reach visitors.
@@ -18,7 +18,7 @@ for (const target of PAGES) {
       expect(response?.status(), `status of ${target.path}`).toBe(200);
     });
 
-    test('shows no placeholder or template text', async ({ page }) => {
+    test('shows no placeholder or template text', knownIssueTags(target.path, 'placeholder-text'), async ({ page }) => {
       // innerText only includes rendered text, so hidden CMS templates don't count.
       const text = await page.locator('body').innerText();
       const found = PLACEHOLDER_TEXT.filter((pattern) => pattern.test(text)).map(String);
@@ -27,7 +27,7 @@ for (const target of PAGES) {
       });
     });
 
-    test('has no visible links that go nowhere (href="#")', async ({ page }) => {
+    test('has no visible links that go nowhere (href="#")', knownIssueTags(target.path, 'placeholder-links'), async ({ page }) => {
       // Webflow lightboxes and Finsweet click mirrors are JS-driven buttons that use href="#" by design.
       const deadLinks = await page
         .locator('a[href="#"]:not(.w-lightbox):not([fs-mirrorclick-element])')

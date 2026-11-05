@@ -1,4 +1,4 @@
-import { test, expect, expectCheck, blockMedia } from '../../fixtures';
+import { test, expect, expectCheck, blockMedia, knownIssueTags } from '../../fixtures';
 import { installWriteGuard } from '../../network/writeGuard';
 import { PAGES } from '../../data/pages';
 
@@ -53,13 +53,13 @@ for (const target of PAGES) {
       }
     });
 
-    test('has exactly one <h1>', () => {
+    test('has exactly one <h1>', knownIssueTags(target.path, 'single-h1'), () => {
       expectCheck(target, 'single-h1', facts.h1Count, (count) => {
         expect(count, 'number of <h1>').toBe(1);
       });
     });
 
-    test('title is present, page-specific and not too long', () => {
+    test('title is present, page-specific and not too long', knownIssueTags(target.path, 'title-length'), () => {
       const { title } = facts;
       expectCheck(target, 'title-length', title.length, (length) => {
         expect(length, `title: "${title}"`).toBeGreaterThan(0);
@@ -68,7 +68,7 @@ for (const target of PAGES) {
       });
     });
 
-    test('meta description has a sensible length', () => {
+    test('meta description has a sensible length', knownIssueTags(target.path, 'meta-description'), () => {
       const desc = facts.metaDescription;
       expectCheck(target, 'meta-description', desc === null ? null : desc.length, (length) => {
         expect(length ?? 0, 'meta description missing').toBeGreaterThan(0);
@@ -77,25 +77,25 @@ for (const target of PAGES) {
       });
     });
 
-    test('has a canonical URL', () => {
+    test('has a canonical URL', knownIssueTags(target.path, 'canonical'), () => {
       expectCheck(target, 'canonical', facts.canonicalCount, (count) => {
         expect(count, 'number of <link rel="canonical">').toBe(1);
       });
     });
 
-    test('declares the page language', () => {
+    test('declares the page language', knownIssueTags(target.path, 'html-lang'), () => {
       expectCheck(target, 'html-lang', facts.lang, (lang) => {
         expect(lang, '<html lang>').toMatch(/^[a-z]{2}(-[A-Z]{2})?$/);
       });
     });
 
-    test('has Open Graph title, description and image', () => {
+    test('has Open Graph title, description and image', knownIssueTags(target.path, 'open-graph'), () => {
       expectCheck(target, 'open-graph', facts.openGraph, (openGraph) => {
         expect(openGraph, 'number of each Open Graph tag').toEqual({ 'og:title': 1, 'og:description': 1, 'og:image': 1 });
       });
     });
 
-    test('has valid JSON-LD structured data', () => {
+    test('has valid JSON-LD structured data', knownIssueTags(target.path, 'json-ld'), () => {
       expectCheck(target, 'json-ld', facts.jsonLd.length, (count) => {
         expect(count, 'JSON-LD blocks').toBeGreaterThan(0);
         for (const block of facts.jsonLd) {

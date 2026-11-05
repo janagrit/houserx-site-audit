@@ -35,7 +35,7 @@ cp .env.example .env   # optional: BASE_URL defaults to production
 | `npm run typecheck` | `tsc` over the whole suite |
 | `npm run report` | open the HTML report from the last run |
 
-A new failing check is a candidate finding. Confirm it by hand, give it the next `HRX-` ID in [FINDINGS.md](FINDINGS.md) and add it to [data/known-issues.ts](data/known-issues.ts) with the value the check measured on each affected page (`observed`; the failure message shows it). The run goes green, the report tags the test with the ID, and the test turns red again as soon as that value changes, whether the site got better or worse.
+A new failing check is a candidate finding. Confirm it by hand, give it the next `HRX-` ID in [FINDINGS.md](FINDINGS.md) and add it to [data/known-issues.ts](data/known-issues.ts) with the value the check measured on each affected page (`observed`; the failure message shows it). The run goes green, the report labels the test `@known-issue` and with the ID (type `@known-issue` in the report's search box to list every test that shows a known bug), and the test turns red again as soon as that value changes, whether the site got better or worse.
 
 ## CI (GitHub Actions)
 

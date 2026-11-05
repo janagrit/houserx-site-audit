@@ -1,5 +1,5 @@
 import type { APIRequestContext } from '@playwright/test';
-import { test, expect, expectCheck } from '../../fixtures';
+import { test, expect, expectCheck, knownIssueTags } from '../../fixtures';
 import { BASE_URL, PAGES } from '../../data/pages';
 
 const HTTP_ERROR_THRESHOLD = 400;
@@ -45,7 +45,7 @@ function linkStatus(request: APIRequestContext, url: string): Promise<number> {
 }
 
 for (const target of PAGES) {
-  test(`Links — ${target.name}: no broken links`, async ({ request }) => {
+  test(`Links — ${target.name}: no broken links`, knownIssueTags(target.path, 'broken-links'), async ({ request }) => {
     // No browser needed: Webflow renders every link server-side.
     const pageUrl = new URL(target.path, BASE_URL).href;
     const page = await request.get(pageUrl);
