@@ -1,3 +1,4 @@
+import { isDeepStrictEqual } from 'node:util';
 import { test as base, expect, type Page } from '@playwright/test';
 import { installWriteGuard, type BlockedWrite } from './network/writeGuard';
 import { BasePage } from './page-objects/BasePage';
@@ -84,11 +85,11 @@ export function knownIssueTags(path: string, check: AuditCheck): { tag: string[]
 export const KNOWN_ISSUE_ANNOTATION = 'known issue';
 
 /**
- * Asserts one check on one page.
- * - No known issue in data/known-issues.ts: runs `assertHealthy`.
- * - Known issue: `actual` must equal the value recorded for this page, exactly. A new problem on the same check
- *   fails instead of hiding behind the known one, and so does a fix (close the entry). The test is tagged with the
- *   issue IDs so the HTML report and the summary table link back to FINDINGS.md.
+ * Asserts one check on one page. The check always runs for real, so a page with a bug fails, known or not.
+ * When data/known-issues.ts covers this check on this page, the test is also annotated with the HRX IDs (shown in
+ * the report next to the failure, and counted as "Known bug" in the summary table). If the site no longer matches
+ * the recorded value, a second annotation says so: the bug changed or got worse, so confirm it by hand and update
+ * `observed`. A known issue whose test passes has been fixed: close it here and in FINDINGS.md.
  */
 export function expectCheck<C extends AuditCheck>(
   target: Pick<AuditPage, 'path'>,
@@ -97,17 +98,17 @@ export function expectCheck<C extends AuditCheck>(
   assertHealthy: (actual: CheckObservations[C]) => void,
 ): void {
   const known = knownDefectFor(target.path, check);
-  if (!known) {
-    assertHealthy(actual);
-    return;
+  if (known) {
+    const { annotations } = test.info();
+    for (const issue of known.issues) {
+      annotations.push({ type: KNOWN_ISSUE_ANNOTATION, description: `${issue.id}: ${issue.title}` });
+    }
+    if (!isDeepStrictEqual(actual, known.observed)) {
+      annotations.push({
+        type: 'known issue changed',
+        description: `recorded ${JSON.stringify(known.observed)}, now ${JSON.stringify(actual)}`,
+      });
+    }
   }
-  for (const issue of known.issues) {
-    test.info().annotations.push({ type: KNOWN_ISSUE_ANNOTATION, description: `${issue.id}: ${issue.title}` });
-  }
-  const ids = known.issues.map((issue) => issue.id).join(', ');
-  expect(
-    actual,
-    `${check} on ${target.path} no longer matches ${ids}. Fixed: close it in known-issues.ts and FINDINGS.md. ` +
-      'Changed: confirm by hand, then update `observed` or file a new HRX- issue',
-  ).toEqual(known.observed);
+  assertHealthy(actual);
 }

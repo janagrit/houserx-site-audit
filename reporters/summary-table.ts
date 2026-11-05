@@ -20,7 +20,7 @@ const COLUMNS: readonly { key: Bucket; label: string; color: string }[] = [
   { key: 'passed', label: 'Passed', color: '32' },
   { key: 'failed', label: 'Failed', color: '31' },
   { key: 'flaky', label: 'Flaky', color: '33' },
-  { key: 'known', label: 'Known defect', color: '35' },
+  { key: 'known', label: 'Known bug', color: '35' },
   { key: 'skipped', label: 'Skipped', color: '90' },
 ];
 
@@ -37,17 +37,17 @@ const seconds = (ms: number): string => `${(ms / 1000).toFixed(1)}s`;
 const KNOWN_ISSUE_ANNOTATION = 'known issue';
 
 /**
- * Maps Playwright's outcome to a table column. A passing test tagged with a known issue (see expectCheck in
- * fixtures.ts) still matches the defect recorded in known-issues.ts: it is a known site defect, not a pass.
+ * Maps Playwright's outcome to a table column. A failing test annotated with a known issue (see expectCheck in
+ * fixtures.ts) is a known site bug from FINDINGS.md; any other failure is new.
  */
 function bucketOf(test: TestCase): Bucket {
   const outcome = test.outcome();
   if (outcome === 'skipped') return 'skipped';
   if (outcome === 'flaky') return 'flaky';
-  if (outcome === 'unexpected') return 'failed';
+  if (outcome === 'expected') return 'passed';
   const last = test.results.at(-1);
   const annotations = [...test.annotations, ...(last?.annotations ?? [])];
-  return annotations.some((a) => a.type === KNOWN_ISSUE_ANNOTATION) ? 'known' : 'passed';
+  return annotations.some((a) => a.type === KNOWN_ISSUE_ANNOTATION) ? 'known' : 'failed';
 }
 
 /** Prints a per-file results table, plus failure details, after the run. */
@@ -122,7 +122,7 @@ export default class SummaryTableReporter implements Reporter {
       ...rows.map((row) => `| \`${row.group}\` | ${counts(row)} | ${seconds(row.durationMs)} |`),
       `| **Total** | ${counts(total)} | ${seconds(total.durationMs)} |`,
       '',
-      ...(total.counts.known > 0 ? [`${total.counts.known} known site defect(s) are tracked in FINDINGS.md.`, ''] : []),
+      ...(total.counts.known > 0 ? [`${total.counts.known} failure(s) are known site bugs from FINDINGS.md; Failed counts new ones only.`, ''] : []),
       ...(failures.length > 0
         ? ['### Failures', '', ...failures.map((f) => `- **${f.title}** (\`${f.group}\`): ${f.error.replace(/\|/g, '\\|')}`), '']
         : []),
@@ -160,7 +160,7 @@ export default class SummaryTableReporter implements Reporter {
   private renderStatus(result: FullResult, total: Row): string {
     const ok = result.status === 'passed';
     const label = ok ? paint('42;30', ' PASS ') : paint('41;37', ` ${result.status.toUpperCase()} `);
-    const note = total.counts.known > 0 ? `  ${total.counts.known} known site defect(s) tracked in FINDINGS.md` : '';
+    const note = total.counts.known > 0 ? `  ${total.counts.known} failure(s) are known site bugs (FINDINGS.md)` : '';
     return `${label} ${seconds(result.duration)} wall time${note}`;
   }
 
