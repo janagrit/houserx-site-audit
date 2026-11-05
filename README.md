@@ -57,7 +57,7 @@ network/
   endpoints.ts      Webflow form API, tracker hosts
   writeGuard.ts     aborts form writes and all analytics / ad pixels
 reporters/
-  summary-table.ts  results table printed after every run (Known bug = failure covered by an HRX- issue)
+  summary-table.ts  per-test results table + known-bug table after every run (Known bug = failure covered by an HRX- issue)
 tests/              one folder per kind of check
   smoke/            page loads, CTAs, navigation, 404
   e2e/              visitor journey, forms and reCAPTCHA presence
