@@ -1,4 +1,4 @@
-import type { Locator, Page } from '@playwright/test';
+import type { Locator, Page, Response } from '@playwright/test';
 
 export type NavItem = 'About Us' | 'Technology' | 'Careers' | 'News & Blog' | 'Contact';
 
@@ -21,14 +21,31 @@ export class SiteHeader {
   }
 
   /** Clicks a menu link and waits until the browser lands on its target, from any starting page. */
-  async navigateTo(item: NavItem): Promise<void> {
-    const link = this.link(item);
+  async navigateTo(item: NavItem): Promise<Response> {
+    return this.followLink(this.link(item));
+  }
+
+  /**
+   * Clicks a link and waits for the page it points to. Returns that page's HTTP response, so callers can tell a
+   * real page from the 404 page (which keeps the URL and also has a heading).
+   */
+  async followLink(link: Locator): Promise<Response> {
     const href = await link.getAttribute('href');
     if (!href) {
-      throw new Error(`Nav link "${item}" has no href`);
+      throw new Error(`Link has no href: ${link}`);
     }
     const target = new URL(href, this.page.url()).pathname;
-    await Promise.all([this.page.waitForURL((url) => url.pathname === target), link.click()]);
+    const [response] = await Promise.all([
+      this.page.waitForResponse(
+        (res) =>
+          res.request().isNavigationRequest() &&
+          res.frame() === this.page.mainFrame() &&
+          new URL(res.url()).pathname === target,
+      ),
+      this.page.waitForURL((url) => url.pathname === target),
+      link.click(),
+    ]);
+    return response;
   }
 
   async goHome(): Promise<void> {

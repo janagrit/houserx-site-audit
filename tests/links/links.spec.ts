@@ -1,5 +1,5 @@
 import type { APIRequestContext } from '@playwright/test';
-import { test, expect, expectKnownIssue } from '../../fixtures';
+import { test, expect, expectCheck } from '../../fixtures';
 import { BASE_URL, PAGES } from '../../data/pages';
 
 const HTTP_ERROR_THRESHOLD = 400;
@@ -46,7 +46,6 @@ function linkStatus(request: APIRequestContext, url: string): Promise<number> {
 
 for (const target of PAGES) {
   test(`Links — ${target.name}: no broken links`, async ({ request }) => {
-    expectKnownIssue(target, 'broken-links');
     // No browser needed: Webflow renders every link server-side.
     const pageUrl = new URL(target.path, BASE_URL).href;
     const page = await request.get(pageUrl);
@@ -58,10 +57,11 @@ for (const target of PAGES) {
       const batch = links.slice(i, i + MAX_PARALLEL_REQUESTS);
       results.push(...(await Promise.all(batch.map(async (url) => ({ url, status: await linkStatus(request, url) })))));
     }
-    const broken = results
-      .filter(({ status }) => status === 0 || status >= HTTP_ERROR_THRESHOLD)
-      .map(({ url, status }) => `${status || 'unreachable'} ${url}`);
+    const broken = results.filter(({ status }) => status === 0 || status >= HTTP_ERROR_THRESHOLD);
+    const report = broken.map(({ url, status }) => `${status || 'unreachable'} ${url}`).join('\n');
 
-    expect(broken, `broken links:\n${broken.join('\n')}`).toEqual([]);
+    expectCheck(target, 'broken-links', broken.map(({ url }) => url).sort(), (urls) => {
+      expect(urls, `broken links:\n${report}`).toEqual([]);
+    });
   });
 }

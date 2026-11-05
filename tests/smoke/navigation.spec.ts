@@ -8,9 +8,11 @@ test.describe('Smoke — Navigation (desktop)', () => {
     test(`"${item}" opens its page`, async ({ homePage, siteHeader, page }) => {
       await homePage.open();
 
-      await siteHeader.navigateTo(item);
+      const response = await siteHeader.navigateTo(item);
 
       await expect(page).toHaveURL(path);
+      expect(response.status(), `status of ${page.url()}`).toBe(200);
+      await expect(page).not.toHaveTitle(/not found/i);
       await expect(page.getByRole('heading').first()).toBeVisible();
     });
   }

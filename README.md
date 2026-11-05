@@ -35,7 +35,7 @@ cp .env.example .env   # optional: BASE_URL defaults to production
 | `npm run typecheck` | `tsc` over the whole suite |
 | `npm run report` | open the HTML report from the last run |
 
-A new failing check is a candidate finding. Confirm it by hand, give it the next `HRX-` ID in [FINDINGS.md](FINDINGS.md) and add it to [data/known-issues.ts](data/known-issues.ts): the run goes green, the report tags the test with the ID, and the test turns red again once the site changes.
+A new failing check is a candidate finding. Confirm it by hand, give it the next `HRX-` ID in [FINDINGS.md](FINDINGS.md) and add it to [data/known-issues.ts](data/known-issues.ts) with the value the check measured on each affected page (`observed`; the failure message shows it). The run goes green, the report tags the test with the ID, and the test turns red again as soon as that value changes, whether the site got better or worse.
 
 ## CI (GitHub Actions)
 
@@ -50,14 +50,14 @@ Every run on `main` publishes the HTML report to [GitHub Pages](https://janagrit
 ```
 data/
   pages.ts          pages under audit, header navigation, BASE_URL
-  known-issues.ts   HRX- issues from FINDINGS.md and the checks they cover
+  known-issues.ts   HRX- issues from FINDINGS.md, the checks they cover and the values observed per page
 fixtures.ts         page objects, pageErrors, write guard (auto), skipMedia option
 page-objects/       one class per page or shared component
 network/
   endpoints.ts      Webflow form API, tracker hosts
   writeGuard.ts     aborts form writes and all analytics / ad pixels
 reporters/
-  summary-table.ts  results table printed after every run (Known defect = expected test.fail)
+  summary-table.ts  results table printed after every run (Known defect = passes only by matching a known issue)
 tests/              one folder per kind of check
   smoke/            page loads, CTAs, navigation, 404
   e2e/              visitor journey, forms and reCAPTCHA presence
@@ -69,7 +69,7 @@ tests/              one folder per kind of check
 
 - **Write guard on by default.** It's a healthcare company's production site: form posts and analytics are aborted for every test, so a run can never create a lead or skew traffic data.
 - **CAPTCHA is checked, never touched.** Tests assert reCAPTCHA is present and Submit stays disabled. No test solves, skips or works around it, so the success state of the forms is out of scope.
-- **Known issues don't break the build.** Confirmed findings are expected failures tagged with their `HRX-` ID, so CI stays green and only *new* regressions turn it red; a fixed issue turns its test red too, prompting cleanup. axe subtracts known rules instead, so a new violation on an already-flagged page still fails.
+- **Known issues don't break the build, and don't hide anything either.** Each confirmed finding records exactly what its check measured on each page (h1 count, broken URLs, axe rule → element count, …). The check passes only while the site still shows that value, so CI stays green, yet a second broken link, one more axe element or an emptied title on an already-flagged page turns it red, and so does a fix, prompting cleanup. Checks also fail when the page doesn't load with a 200, so an error or challenge page is never audited in its place.
 - **Soft assertions where one test checks several things** (title, meta description, Open Graph), so one run reports every problem on a page instead of stopping at the first.
 - **Light on the live site.** One daily run (plus pushes), about 3–4 minutes. DOM-level checks skip the ~14 MB of GIFs per page, SEO loads each page once, and link checking uses plain HTTP with each URL requested once per run.
 

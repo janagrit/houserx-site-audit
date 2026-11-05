@@ -26,8 +26,12 @@ test.describe('Mobile — Navigation', () => {
     await homePage.open();
     await siteHeader.openMobileMenu();
 
-    await siteHeader.mobileOverlay.getByRole('link', { name: 'Technology', exact: true }).click();
+    const response = await siteHeader.followLink(
+      siteHeader.mobileOverlay.getByRole('link', { name: 'Technology', exact: true }),
+    );
 
     await expect(page).toHaveURL(/\/technology$/);
+    expect(response.status(), `status of ${page.url()}`).toBe(200);
+    await expect(page).not.toHaveTitle(/not found/i);
   });
 });

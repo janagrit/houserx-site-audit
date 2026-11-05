@@ -33,13 +33,21 @@ const pad = (text: string, width: number, alignRight: boolean): string => {
 };
 const seconds = (ms: number): string => `${(ms / 1000).toFixed(1)}s`;
 
-/** Maps Playwright's outcome to a table column. Expected failures (`test.fail`) are known site defects. */
+/** Same value as KNOWN_ISSUE_ANNOTATION in fixtures.ts (not imported, so the reporter stays independent of tests). */
+const KNOWN_ISSUE_ANNOTATION = 'known issue';
+
+/**
+ * Maps Playwright's outcome to a table column. A passing test tagged with a known issue (see expectCheck in
+ * fixtures.ts) still matches the defect recorded in known-issues.ts: it is a known site defect, not a pass.
+ */
 function bucketOf(test: TestCase): Bucket {
   const outcome = test.outcome();
   if (outcome === 'skipped') return 'skipped';
   if (outcome === 'flaky') return 'flaky';
   if (outcome === 'unexpected') return 'failed';
-  return test.expectedStatus === 'failed' ? 'known' : 'passed';
+  const last = test.results.at(-1);
+  const annotations = [...test.annotations, ...(last?.annotations ?? [])];
+  return annotations.some((a) => a.type === KNOWN_ISSUE_ANNOTATION) ? 'known' : 'passed';
 }
 
 /** Prints a per-file results table, plus failure details, after the run. */

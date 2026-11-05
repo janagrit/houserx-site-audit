@@ -4,7 +4,7 @@ import { BasePage } from './page-objects/BasePage';
 import { ContactPage } from './page-objects/ContactPage';
 import { HomePage } from './page-objects/HomePage';
 import { SiteHeader } from './page-objects/SiteHeader';
-import { knownIssuesFor, type AuditCheck } from './data/known-issues';
+import { knownDefectFor, type AuditCheck, type CheckObservations } from './data/known-issues';
 import type { AuditPage } from './data/pages';
 
 interface AuditOptions {
@@ -69,15 +69,34 @@ export const test = base.extend<AuditFixtures & AuditOptions>({
 
 export { expect };
 
+/** Annotation type that marks a test as covered by a known site defect (read by the summary reporter). */
+export const KNOWN_ISSUE_ANNOTATION = 'known issue';
+
 /**
- * Marks the current test as an expected failure when data/known-issues.ts covers this check on this page,
- * and tags it with the issue IDs so the HTML report links back to FINDINGS.md.
- * The test turns red once the issue is resolved, signalling the entry can be closed.
+ * Asserts one check on one page.
+ * - No known issue in data/known-issues.ts: runs `assertHealthy`.
+ * - Known issue: `actual` must equal the value recorded for this page, exactly. A new problem on the same check
+ *   fails instead of hiding behind the known one, and so does a fix (close the entry). The test is tagged with the
+ *   issue IDs so the HTML report and the summary table link back to FINDINGS.md.
  */
-export function expectKnownIssue(target: Pick<AuditPage, 'path'>, check: AuditCheck): void {
-  const issues = knownIssuesFor(target.path, check);
-  for (const issue of issues) {
-    test.info().annotations.push({ type: 'known issue', description: `${issue.id}: ${issue.title}` });
+export function expectCheck<C extends AuditCheck>(
+  target: Pick<AuditPage, 'path'>,
+  check: C,
+  actual: CheckObservations[C],
+  assertHealthy: (actual: CheckObservations[C]) => void,
+): void {
+  const known = knownDefectFor(target.path, check);
+  if (!known) {
+    assertHealthy(actual);
+    return;
   }
-  test.fail(issues.length > 0, `Known issue — ${issues.map((issue) => issue.id).join(', ')} (see FINDINGS.md)`);
+  for (const issue of known.issues) {
+    test.info().annotations.push({ type: KNOWN_ISSUE_ANNOTATION, description: `${issue.id}: ${issue.title}` });
+  }
+  const ids = known.issues.map((issue) => issue.id).join(', ');
+  expect(
+    actual,
+    `${check} on ${target.path} no longer matches ${ids}. Fixed: close it in known-issues.ts and FINDINGS.md. ` +
+      'Changed: confirm by hand, then update `observed` or file a new HRX- issue',
+  ).toEqual(known.observed);
 }

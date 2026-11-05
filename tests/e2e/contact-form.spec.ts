@@ -1,4 +1,4 @@
-import { test, expect, expectKnownIssue } from '../../fixtures';
+import { test, expect, expectCheck } from '../../fixtures';
 import type { Inquiry } from '../../page-objects/ContactPage';
 
 // Both forms post to Webflow's form API, which the write guard aborts, and Submit stays disabled behind
@@ -19,24 +19,32 @@ test.describe('E2E — Contact form', () => {
   });
 
   test('every field has a visible label', async ({ contactPage }) => {
-    const unlabelled = await contactPage.form
-      .locator('input:not([type="hidden"]):not([type="submit"]), textarea:not([name="g-recaptcha-response"])')
-      .evaluateAll((fields) =>
-        fields
-          .filter((field) => !(field as HTMLInputElement).labels?.length)
-          .map((field) => (field as HTMLInputElement).name),
-      );
-    expect(unlabelled).toEqual([]);
+    const fields = contactPage.form.locator(
+      'input:not([type="hidden"]):not([type="submit"]), textarea:not([name="g-recaptcha-response"])',
+    );
+    // Guards against passing on an empty match, e.g. after the form id changes.
+    await expect(fields, 'contact form fields').not.toHaveCount(0);
+
+    const unlabelled = await fields.evaluateAll((elements) =>
+      elements
+        .filter((field) => ![...((field as HTMLInputElement).labels ?? [])].some((label) => label.checkVisibility()))
+        .map((field) => (field as HTMLInputElement).name),
+    );
+    expect(unlabelled, 'fields without a visible label').toEqual([]);
   });
 
   test('required fields are marked with * in their label', async ({ contactPage }) => {
-    expectKnownIssue({ path: '/contact' }, 'contact-required-marker');
-    const unmarked = await contactPage.form.locator('[required]').evaluateAll((fields) =>
+    const required = contactPage.form.locator('[required]');
+    await expect(required, 'required fields').not.toHaveCount(0);
+
+    const unmarked = await required.evaluateAll((fields) =>
       fields
         .filter((field) => !(field as HTMLInputElement).labels?.[0]?.textContent?.includes('*'))
         .map((field) => (field as HTMLInputElement).labels?.[0]?.textContent?.trim() ?? (field as HTMLInputElement).name),
     );
-    expect(unmarked, 'required but no * in label').toEqual([]);
+    expectCheck({ path: '/contact' }, 'contact-required-marker', unmarked, (labels) => {
+      expect(labels, 'required but no * in label').toEqual([]);
+    });
   });
 
   test('offers the company-type options', async ({ contactPage }) => {
@@ -64,8 +72,10 @@ test.describe('E2E — Home lead form ("complimentary dispensing analysis")', ()
   test('asks for name, email, phone and practice, all required', async ({ homePage }) => {
     await homePage.open();
 
-    const fields = await homePage.leadForm.locator('input:not([type="submit"]):not([type="hidden"])').evaluateAll((inputs) =>
-      inputs.map((input) => ({ name: (input as HTMLInputElement).name, required: (input as HTMLInputElement).required })),
+    const inputs = homePage.leadForm.locator('input:not([type="submit"]):not([type="hidden"])');
+    await expect(inputs, 'lead form fields').not.toHaveCount(0);
+    const fields = await inputs.evaluateAll((elements) =>
+      elements.map((input) => ({ name: (input as HTMLInputElement).name, required: (input as HTMLInputElement).required })),
     );
     expect(fields).toEqual(
       ['First-Name', 'Last-Name', 'Email', 'Phone', 'Practice'].map((name) => ({ name, required: true })),

@@ -1,4 +1,4 @@
-import { test, expect, expectKnownIssue } from '../../fixtures';
+import { test, expect, expectCheck } from '../../fixtures';
 import { PAGES } from '../../data/pages';
 
 // Template and CMS leftovers that should never reach visitors.
@@ -13,19 +13,21 @@ for (const target of PAGES) {
     test.use({ reducedMotion: 'reduce', skipMedia: true });
 
     test.beforeEach(async ({ basePage }) => {
-      await basePage.open(target.path);
+      const response = await basePage.open(target.path);
+      // Otherwise an error or challenge page would be checked instead and could pass.
+      expect(response?.status(), `status of ${target.path}`).toBe(200);
     });
 
     test('shows no placeholder or template text', async ({ page }) => {
-      expectKnownIssue(target, 'placeholder-text');
       // innerText only includes rendered text, so hidden CMS templates don't count.
       const text = await page.locator('body').innerText();
       const found = PLACEHOLDER_TEXT.filter((pattern) => pattern.test(text)).map(String);
-      expect(found, `placeholder text visible: ${found.join(', ')}`).toEqual([]);
+      expectCheck(target, 'placeholder-text', found, (patterns) => {
+        expect(patterns, `placeholder text visible: ${patterns.join(', ')}`).toEqual([]);
+      });
     });
 
     test('has no visible links that go nowhere (href="#")', async ({ page }) => {
-      expectKnownIssue(target, 'placeholder-links');
       // Webflow lightboxes and Finsweet click mirrors are JS-driven buttons that use href="#" by design.
       const deadLinks = await page
         .locator('a[href="#"]:not(.w-lightbox):not([fs-mirrorclick-element])')
@@ -43,7 +45,9 @@ for (const target of PAGES) {
         (acc, label) => ({ ...acc, [label]: (acc[label] ?? 0) + 1 }),
         {},
       );
-      expect(counts, 'links with href="#" (label: count)').toEqual({});
+      expectCheck(target, 'placeholder-links', counts, (labels) => {
+        expect(labels, 'links with href="#" (label: count)').toEqual({});
+      });
     });
   });
 }
